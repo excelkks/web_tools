@@ -93,7 +93,7 @@
             </div>
             <div class="input-group">
                 <label for="ctu_size">CTU尺寸 :</label>
-                <input type="number" id="ctu_size" class="focusFuncName">
+                <input type="number" id="ctu_size" class="focusFuncName" value="32">
             </div>
         </div>
         <!-- <button onclick="addInputs()">错误定位</button> -->
@@ -126,6 +126,8 @@
                 <tr><th>列</th><td></td></tr>
                 <tr><th>CTU行</th><td></td></tr>
                 <tr><th>CTU列</th><td></td></tr>
+                <tr><th>CTU内行</th><td></td></tr>
+                <tr><th>CTU内列</th><td></td></tr>
             </table>
         `;
 
@@ -169,6 +171,9 @@
                 err_ctu_row = Math.floor(err_row / (ctu_size / 2));
                 err_ctu_col = Math.floor(err_col / (ctu_size / 2));
             }
+            const err_inner_ctu_row = err_row % ctu_size;
+            const err_inner_ctu_col = err_col % ctu_size;
+
             const label_frame = "帧"
             const label_channel = "分量"
             const label_row = "行"
@@ -187,6 +192,8 @@
                     <tr><th>列</th><td>${err_col}</td></tr>
                     <tr><th>CTU行</th><td>${err_ctu_row}</td></tr>
                     <tr><th>CTU列</th><td>${err_ctu_col}</td></tr>
+                    <tr><th>CTU内行</th><td>${err_inner_ctu_row}</td></tr>
+                    <tr><th>CTU内列</th><td>${err_inner_ctu_col}</td></tr>
                 </table>
             `;
         }
