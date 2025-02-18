@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>定位视频错误</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .input-group-box {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+            width: 300px;
+            padding: 20px;
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+        .input-group label {
+            width: 100px;
+            font-weight: bold;
+        }
+        .input-group input {
+            flex: 1;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            padding: 10px;
+            background-color: #f8f6f6;
+            border-top: 1px dashed #d4d4d4;
+            min-height: 140px;
+            margin: 0;
+        }
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .result-table th, .result-table td {
+            padding: 4px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="input-group-box">
+            <div class="input-group">
+                <label for="width">图像宽 :</label>
+                <input type="number" id="width" class="focusFuncName">
+            </div>
+            <div class="input-group">
+                <label for="height">图像高 :</label>
+                <input type="number" id="height" class="focusFuncName">
+            </div>
+            <div class="input-group">
+                <label for="error_position">错误位置 :</label>
+                <input type="number" id="error_position" class="focusFuncName">
+            </div>
+            <div class="input-group">
+                <label for="ctu_size">CTU尺寸 :</label>
+                <input type="number" id="ctu_size" class="focusFuncName">
+            </div>
+        </div>
+        <!-- <button onclick="addInputs()">错误定位</button> -->
+        <p id="result" class="result"></p>
+    </div>
+
+    <script>
+        function haveValue() {
+            const width = document.getElementById('width').value;
+            const height = document.getElementById('height').value;
+            const error_position = document.getElementById('error_position').value;
+            const ctu_size = document.getElementById('ctu_size').value;
+            console.log(width, height, error_position, ctu_size);
+            return width && height && error_position && ctu_size;
+        }
+
+        var focusFuncNameList = document.getElementsByClassName("focusFuncName");
+        for (var i = 0; i < focusFuncNameList.length; i++) {
+            focusFuncNameList[i].oninput = function() {
+                if (haveValue()) {
+                    addInputs();
+                }
+            };
+        }
+        document.getElementById('result').innerHTML = `
+            <table class="result-table">
+                <tr><th>帧</th><td></td></tr>
+                <tr><th>分量</th><td></td></tr>
+                <tr><th>行</th><td></td></tr>
+                <tr><th>列</th><td></td></tr>
+                <tr><th>CTU行</th><td></td></tr>
+                <tr><th>CTU列</th><td></td></tr>
+            </table>
+        `;
+
+        function addInputs() {
+            const width = parseInt(document.getElementById('width').value) || 0;
+            const height = parseInt(document.getElementById('height').value) || 0;
+            const error_position = parseInt(document.getElementById('error_position').value) || 0;
+            const ctu_size = parseInt(document.getElementById('ctu_size').value) || 32;
+            const result = width + height + error_position;
+            let y_size = width * height;
+            let uv_size = width * height / 4;
+            let pic_size = y_size + uv_size * 2;
+            let err_frame = Math.floor(error_position / pic_size);
+            let err_pos_in_frame = error_position % pic_size;
+            let err_channel = 'Y';
+            let err_pos_in_channel = 0;
+            let err_row;
+            let err_col;
+            let err_ctu_row;
+            let err_ctu_col;
+            if (err_pos_in_frame < y_size) {
+                err_channel = 'Y';
+                err_pos_in_channel = err_pos_in_frame;
+                err_row = Math.floor(err_pos_in_channel / width);
+                err_col = err_pos_in_channel % width;
+            } else if (err_pos_in_frame < y_size + uv_size) {
+                err_channel = 'U';
+                err_pos_in_channel = err_pos_in_frame - y_size;
+                err_row = Math.floor(err_pos_in_channel / (width / 2));
+                err_col = err_pos_in_channel % (width / 2);
+            } else {
+                err_channel = 'V';
+                err_pos_in_channel = err_pos_in_frame - y_size - uv_size;
+                err_row = Math.floor(err_pos_in_channel / (width / 2));
+                err_col = err_pos_in_channel % (width / 2);
+            }
+            if (err_channel === 'Y') {
+                err_ctu_row = Math.floor(err_row / ctu_size);
+                err_ctu_col = Math.floor(err_col / ctu_size);
+            } else {
+                err_ctu_row = Math.floor(err_row / (ctu_size / 2));
+                err_ctu_col = Math.floor(err_col / (ctu_size / 2));
+            }
+            const label_frame = "帧"
+            const label_channel = "分量"
+            const label_row = "行"
+            const label_col = "列"
+            const label_ctu_row = "CTU行"
+            const label_ctu_col = "col_in_ctu"
+
+            // document.getElementById('result').innerText = '帧: ' + err_frame + '\n分量: ' + err_channel + '\n行: ' +
+            //  err_row + '\n列: ' + err_col + '\nCTU行: ' + err_ctu_row + '\nCTU列: ' + err_ctu_col;
+
+            document.getElementById('result').innerHTML = `
+                <table class="result-table">
+                    <tr><th>帧</th><td>${err_frame}</td></tr>
+                    <tr><th>分量</th><td>${err_channel}</td></tr>
+                    <tr><th>行</th><td>${err_row}</td></tr>
+                    <tr><th>列</th><td>${err_col}</td></tr>
+                    <tr><th>CTU行</th><td>${err_ctu_row}</td></tr>
+                    <tr><th>CTU列</th><td>${err_ctu_col}</td></tr>
+                </table>
+            `;
+        }
+    </script>
+</body>
